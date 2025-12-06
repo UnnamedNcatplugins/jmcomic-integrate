@@ -90,11 +90,12 @@ class UnnamedJmComicIntegrate(NcatBotPlugin):
             await event.reply(f'未设定jmid,重试')
             return
         page = self.jm_client.search_site(search_query=str(jm_id))
-        if hasattr(page, 'album'):
-            album: jmcomic.JmAlbumDetail = page.single_album
-            await self.api.send_group_text(event.group_id, album.title)
-        else:
+        if not hasattr(page, 'album'):
             await event.reply(f'无法解析的JM号{jm_id}')
+            return
+        album: jmcomic.JmAlbumDetail = page.single_album
+        await self.api.send_group_text(event.group_id, album.title)
+        await event.reply(f'\n{album.title=}\n{album.tags}')
 
     async def on_close(self) -> None:
         await super().on_close()
