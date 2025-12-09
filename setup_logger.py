@@ -15,6 +15,7 @@ def get_logger(module_name: str, log_dir=Path("logs"), debug: bool = False):
     :return: logging.Logger
     """
     logger = logging.getLogger(module_name)
+    logger.propagate = False
 
     # 1. 关键修改：将总记录器的级别设置为 DEBUG
     # 这样所有级别的日志才能通过“总闸”，流向后面的 Handler 进行筛选
