@@ -80,6 +80,7 @@ class UnnamedJmComicIntegrate(NcatBotPlugin):
         if not isinstance(text_msg, PlainText) and not isinstance(text_msg, Text):
             logger.debug(f'原始消息非文本, 退出')
             return
+        logger.info('解析jml信息')
         reply_text = ''
         for index, line in enumerate(text_msg.text.splitlines()):
             if index == 0:
