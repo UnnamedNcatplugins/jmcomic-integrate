@@ -1,7 +1,7 @@
 import asyncio
 import re
 import jmcomic
-from ncatbot.plugin_system import NcatBotPlugin, command_registry
+from ncatbot.plugin_system import NcatBotPlugin, command_registry, on_message
 from ncatbot.core.event.message_segment.message_segment import PlainText, Text
 from dataclasses import dataclass, field
 from .config_proxy import ProxiedPluginConfig
@@ -70,7 +70,7 @@ class UnnamedJmComicIntegrate(NcatBotPlugin):
         await self.api.send_group_text(event.group_id, album.title)
         await event.reply(f'\n{album.title=}\n{album.tags}')
 
-    @command_registry.command('jml')
+    @on_message
     async def resolve_jm_line(self, event: GroupMessageEvent) -> None:
         original_msg = event.message.messages
         if len(original_msg) != 1:
@@ -79,6 +79,9 @@ class UnnamedJmComicIntegrate(NcatBotPlugin):
         text_msg = original_msg[0]
         if not isinstance(text_msg, PlainText) and not isinstance(text_msg, Text):
             logger.debug(f'原始消息非文本, 退出')
+            return
+        if text_msg.text.splitlines()[0] != '/jml':
+            logger.debug(f'非jml命令, 退出')
             return
         logger.info('解析jml信息')
         reply_text = ''
@@ -90,12 +93,14 @@ class UnnamedJmComicIntegrate(NcatBotPlugin):
             if len(pure_digits) == 0:
                 continue
             jm_id = int(pure_digits)
-            page = await asyncio.to_thread(self.jm_client.search_site(search_query=str(jm_id)))
+            page = await asyncio.to_thread(self.jm_client.search_site, search_query=str(jm_id))
             if not hasattr(page, 'album'):
                 reply_text += f'{line}: 无法解析的jm号: {jm_id}\n'
+                logger.debug(f'{line} 解析失败')
                 continue
             album: jmcomic.JmAlbumDetail = page.single_album
             reply_text += f'{line}: {album.title}: {album.tags}\n'
+            logger.debug(f'{line} 解析成功')
         await event.reply(reply_text)
 
     async def on_close(self) -> None:
